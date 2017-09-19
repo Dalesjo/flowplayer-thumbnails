@@ -55,6 +55,8 @@
                 var height = c.height || 80,
                     interval = c.interval || 1,
                     template = c.template,
+                    live = c.live || false,
+                    timeframe = c.timeframe || 60,
                     time_format = c.time_format || function (t) {
                         return t;
                     },
@@ -82,7 +84,7 @@
                         load();
                     };
 
-                if (c.preload) {
+                if (c.preload && c.live === false) {
                     preloadImages(video.duration, startIndex);
                 }
 
@@ -109,11 +111,26 @@
                     if (seconds < 0 || seconds > Math.round(api.video.duration)) {
                         return;
                     }
+
                     // enables greater interval than one second between thumbnails
                     seconds = Math.floor(seconds / interval);
+                    seconds += startIndex;
+
+                    if(c.live) {
+                      seconds += (Date.now()/1000);
+                      seconds -= api.video.duration;
+
+
+                      var time = new Date(seconds*1000);
+                      common.html(timelineTooltip,("0" + time.getHours()).slice(-2)   + ":" +
+                                      ("0" + time.getMinutes()).slice(-2) + ":" +
+                                      ("0" + time.getSeconds()).slice(-2));
+
+                      seconds -= seconds % timeframe;
+                    }
 
                     // {time} template expected to start at 1, video time/first frame starts at 0
-                    url = template.replace('{time}', time_format(seconds + startIndex));
+                    url = template.replace('{time}', time_format(seconds));
 
                     if (c.lazyload !== false) {
                         thumb.src = url;
